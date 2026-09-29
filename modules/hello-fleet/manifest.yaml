@@ -1,7 +1,7 @@
 schema: 1
 id: com.fleetwood.hello
 name: Hello Fleet
-version: 0.1.0
+version: 0.2.0
 publisher: { name: Fleetwood, url: https://github.com/dark-matter-design/fleetwood }
 description: Reference module showing a declarative page, a widget and a job type.
 license: MIT

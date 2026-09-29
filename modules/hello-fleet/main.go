@@ -31,6 +31,9 @@ func hostKVSet(req uint64) uint64
 //go:wasmimport extism:host/user sites_current
 func hostSitesCurrent(req uint64) uint64
 
+//go:wasmimport extism:host/user jobs_enqueue
+func hostJobsEnqueue(req uint64) uint64
+
 // logf sends one line to core, attributed to this module.
 func logf(level, message string) {
 	l := pdk.AllocateString(level)
@@ -261,6 +264,35 @@ func onDisable() int32 {
 	in := input()
 	logf("info", "disabled on site "+in.SiteID)
 	return output(map[string]any{"status": "ok"})
+}
+
+// page_action is a person pressing something on the module's page. Core has already checked they
+// hold the permission the page declared before this is called.
+//
+//go:wasmexport page_action
+func pageAction() int32 {
+	in := input()
+	// A module cannot run work itself. It asks, and core decides whether the job type is this
+	// module's own and whether it may run on this site.
+	run, err := enqueueGreeting("hello from the page")
+	if err != nil {
+		logf("warn", "could not queue the greeting: "+err.Error())
+		return output(map[string]any{"status": "refused", "detail": err.Error()})
+	}
+	logf("info", "queued run "+run+" for site "+in.SiteID)
+	return output(map[string]any{"status": "queued", "run": run})
+}
+
+// enqueueGreeting asks core to run this module's own job type.
+func enqueueGreeting(greeting string) (string, error) {
+	var out struct {
+		Run string `json:"run"`
+	}
+	err := call(hostJobsEnqueue, map[string]any{
+		"job_type": "com.fleetwood.hello.say-hello",
+		"params":   map[string]string{"greeting": greeting},
+	}, &out)
+	return out.Run, err
 }
 
 func orDash(s string) string {
