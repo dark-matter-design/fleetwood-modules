@@ -1,0 +1,36 @@
+schema: 1
+id: com.fleetwood.hello
+name: Hello Fleet
+version: 0.1.0
+publisher: { name: Fleetwood, url: https://github.com/dark-matter-design/fleetwood }
+description: Reference module showing a declarative page, a widget and a job type.
+license: MIT
+fleetwood: ">=0.1.0 <2.0.0"
+scope: site
+platforms: [macOS, iPadOS, iOS]
+supports:
+  jamf_pro: { required: false }
+permissions:
+  - key: hello:read
+    description: View the Hello Fleet page and widget
+  - key: hello:execute
+    description: Run the Hello Fleet job
+job_types:
+  - id: say-hello
+    name: Say hello to targets
+    permission: hello:execute
+    target_kind: devices
+    dry_run: true
+widgets:
+  - id: hello-count
+    name: Hello Fleet
+    sizes: [S, M]
+    permission: hello:read
+    refresh_seconds: 900
+pages:
+  - id: hello
+    title: Hello Fleet
+    icon: hand-waving
+    kind: declarative
+    permission: hello:read
+docs: docs/

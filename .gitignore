@@ -1,0 +1,8 @@
+# Signing keys. These never belong in the repository; see README.md.
+.keys/
+
+# Intermediate build output. The published repository under docs/ is committed.
+build/
+modules/*/module.wasm
+
+.DS_Store

@@ -1,0 +1,63 @@
+name: Verify published repository
+
+# Building a module needs the Go toolchain and fleetwood-mod from the private Fleetwood checkout,
+# which CI does not have. These checks need neither: they prove the committed docs/ is internally
+# consistent, which catches the realistic mistake of pushing a stale or half-rebuilt repository.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      BASE: https://dark-matter-design.github.io/fleetwood-modules
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Index is well formed
+        run: |
+          test -f docs/index.json
+          jq -e '.schema == 1 and (.modules | length) > 0' docs/index.json > /dev/null
+          jq -e '[.modules[].versions[]] | length > 0' docs/index.json > /dev/null
+
+      - name: Every package matches the index
+        run: |
+          set -euo pipefail
+          jq -r '.modules[].versions[] | [.url, .sha256, .signature_url] | @tsv' docs/index.json |
+          while IFS=$'\t' read -r url want sigurl; do
+            case "$url" in
+              "$BASE/"*) ;;
+              *) echo "::error::url $url is not under $BASE"; exit 1 ;;
+            esac
+            case "$sigurl" in
+              "$BASE/"*) ;;
+              *) echo "::error::signature url $sigurl is not under $BASE"; exit 1 ;;
+            esac
+            file="docs/${url##*/}"
+            if [ ! -f "$file" ]; then echo "::error::index names $file, which is missing"; exit 1; fi
+            if [ ! -f "$file.minisig" ]; then echo "::error::$file has no signature"; exit 1; fi
+            got=$(sha256sum "$file" | cut -d' ' -f1)
+            if [ "$got" != "$want" ]; then
+              echo "::error::$file sha256 $got does not match the index ($want)"; exit 1
+            fi
+            echo "ok $file"
+          done
+
+      - name: Signatures verify against the published key
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq minisign
+          test -f docs/minisign.pub
+          # The key in README.md is the one people paste into Fleetwood, so the published key file
+          # has to be the same one, or the repository would verify here and fail for a real client.
+          published=$(grep -oE 'RW[A-Za-z0-9+/=]{40,}' docs/minisign.pub | head -1)
+          documented=$(grep -oE 'RW[A-Za-z0-9+/=]{40,}' README.md | head -1)
+          if [ "$published" != "$documented" ]; then
+            echo "::error::docs/minisign.pub and the key in README.md differ"; exit 1
+          fi
+          minisign -Vqm docs/index.json -p docs/minisign.pub
+          for pkg in docs/*.fwmod; do minisign -Vqm "$pkg" -p docs/minisign.pub; done
+          echo "all signatures verify"

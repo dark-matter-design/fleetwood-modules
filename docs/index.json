@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "name": "Fleetwood Modules",
+  "publisher": "Dark Matter Design",
+  "modules": [
+    {
+      "id": "com.fleetwood.hello",
+      "name": "Hello Fleet",
+      "summary": "Reference module showing a declarative page, a widget and a job type.",
+      "versions": [
+        {
+          "version": "0.1.0",
+          "fleetwood": "\u003e=0.1.0 \u003c2.0.0",
+          "url": "https://dark-matter-design.github.io/fleetwood-modules/hello-fleet-0.1.0.fwmod",
+          "sha256": "b091ee8fb47716f70e6270529e3f3e847bcac9e3ac7ec58e04e1e752ff72ec0b",
+          "signature_url": "https://dark-matter-design.github.io/fleetwood-modules/hello-fleet-0.1.0.fwmod.minisig",
+          "released": "2026-09-29"
+        }
+      ]
+    }
+  ]
+}
